@@ -8,7 +8,7 @@ The workspace includes a clinic finder that uses OpenStreetMap data. Search for 
 
 Clinic distances are straight-line estimates, not road distances. OpenStreetMap listings can be incomplete or outdated and do not confirm that a facility is open or provides vaccinations. Searches send the entered location or coordinates to OpenStreetMap services, which may observe request metadata such as the user's IP address. The app does not send child or guardian records to these services or save GPS coordinates.
 
-The prototype uses public Nominatim and Overpass endpoints by default. Nominatim's public usage policy allows only modest user-triggered usage (maximum one request per second); repeated successful searches are cached in memory. For production or higher traffic, configure an approved provider or proxy with:
+The prototype uses public Nominatim and Overpass endpoints by default. If an Overpass instance times out or is unavailable, the app tries another public instance before showing an error. Nominatim's public usage policy allows only modest user-triggered usage (maximum one request per second); repeated successful searches are cached in memory. For production or higher traffic, configure an approved provider or proxy with:
 
 ```text
 VITE_NOMINATIM_URL=https://your-geocoding-service/search

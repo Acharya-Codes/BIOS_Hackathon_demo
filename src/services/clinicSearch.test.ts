@@ -50,6 +50,45 @@ describe("nearby clinic search", () => {
 
   it("reports network errors rather than returning fake results", async () => {
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new TypeError("offline")));
-    await expect(searchNearbyClinics({ lat: 10, lon: 10 }, 10)).rejects.toThrow(/unavailable/i);
+    await expect(searchNearbyClinics({ lat: 10, lon: 10 }, 10)).rejects.toThrow(/could not be reached/i);
+  });
+
+  it("uses another Overpass instance when the first one times out or fails", async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({ ok: false, status: 504 })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          elements: [{ type: "node", id: 77, lat: 20, lon: 20, tags: { amenity: "clinic", name: "Fallback clinic" } }],
+        }),
+      });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(searchNearbyClinics({ lat: 20, lon: 20 }, 5)).resolves.toMatchObject([
+      { name: "Fallback clinic", osmId: 77 },
+    ]);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock.mock.calls[0][0]).not.toBe(fetchMock.mock.calls[1][0]);
+  });
+
+  it("allows retrying the same location after all instances fail", async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({ ok: false, status: 504 })
+      .mockResolvedValueOnce({ ok: false, status: 504 })
+      .mockResolvedValueOnce({ ok: false, status: 504 })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          elements: [{ type: "node", id: 88, lat: 30, lon: 30, tags: { amenity: "clinic", name: "Recovered clinic" } }],
+        }),
+      });
+    vi.stubGlobal("fetch", fetchMock);
+    const location = { lat: 30, lon: 30 };
+
+    await expect(searchNearbyClinics(location, 10)).rejects.toThrow(/HTTP 504/i);
+    await expect(searchNearbyClinics(location, 10)).resolves.toMatchObject([
+      { name: "Recovered clinic", osmId: 88 },
+    ]);
+    expect(fetchMock).toHaveBeenCalledTimes(4);
   });
 });

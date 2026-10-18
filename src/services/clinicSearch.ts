@@ -2,7 +2,7 @@ import type { Clinic, Coordinates } from "../types/clinics";
 import { haversineDistanceKm } from "../utils/distance";
 import { MAP_SERVICE_ENDPOINTS } from "./mapServices";
 
-const REQUEST_TIMEOUT_MS = 30_000;
+const REQUEST_TIMEOUT_MS = 12_000;
 const CACHE_LIMIT = 50;
 const cache = new Map<string, Clinic[]>();
 const inFlight = new Map<string, Promise<Clinic[]>>();
@@ -52,7 +52,7 @@ function facilityAddress(tags: Record<string, string>): string | undefined {
 
 export function buildOverpassQuery(location: Coordinates, radiusKm: number): string {
   const radiusMetres = Math.round(radiusKm * 1000);
-  return `[out:json][timeout:25];(nwr(around:${radiusMetres},${location.lat},${location.lon})["amenity"~"^(clinic|hospital|doctors|health_post)$"];nwr(around:${radiusMetres},${location.lat},${location.lon})["healthcare"~"^(clinic|hospital|doctor|centre|health_centre|health_center|health_post|community_health_centre|community_health_center|nurse)$"];);out center tags;`;
+  return `[out:json][timeout:15];(nwr(around:${radiusMetres},${location.lat},${location.lon})["amenity"~"^(clinic|hospital|doctors|health_post)$"];nwr(around:${radiusMetres},${location.lat},${location.lon})["healthcare"~"^(clinic|hospital|doctor|centre|health_centre|health_center|health_post|community_health_centre|community_health_center|nurse)$"];);out center tags;`;
 }
 
 export function normalizeClinics(payload: unknown, origin: Coordinates, radiusKm: number): Clinic[] {
@@ -103,32 +103,50 @@ export function searchNearbyClinics(location: Coordinates, radiusKm: number): Pr
   if (pending) return pending;
 
   const request = (async () => {
-    const controller = new AbortController();
-    const timeout = globalThis.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+    const query = buildOverpassQuery(location, radiusKm);
+    const endpoints = [...new Set(MAP_SERVICE_ENDPOINTS.overpass)];
+    let lastError: Error | null = null;
+
     try {
-      const response = await fetch(MAP_SERVICE_ENDPOINTS.overpass, {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
-        body: new URLSearchParams({ data: buildOverpassQuery(location, radiusKm) }),
-        signal: controller.signal,
-      });
-      if (!response.ok) {
-        throw new Error(`The clinic service could not complete your search (HTTP ${response.status}).`);
+      for (const endpoint of endpoints) {
+        const controller = new AbortController();
+        const timeout = globalThis.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+        try {
+          const response = await fetch(endpoint, {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
+            body: new URLSearchParams({ data: query }),
+            signal: controller.signal,
+          });
+          if (!response.ok) {
+            throw new Error(`The clinic service returned HTTP ${response.status}.`);
+          }
+
+          const clinics = normalizeClinics(await response.json(), location, radiusKm);
+          cache.set(key, clinics);
+          if (cache.size > CACHE_LIMIT) cache.delete(cache.keys().next().value as string);
+          return clinics;
+        } catch (error) {
+          if (error instanceof Error && error.name === "AbortError") {
+            lastError = new Error("The clinic search timed out.");
+          } else if (error instanceof TypeError) {
+            lastError = new Error("The clinic service is unavailable.");
+          } else {
+            lastError = error instanceof Error ? error : new Error("The clinic service returned an unexpected error.");
+          }
+        } finally {
+          globalThis.clearTimeout(timeout);
+        }
       }
-      const clinics = normalizeClinics(await response.json(), location, radiusKm);
-      cache.set(key, clinics);
-      if (cache.size > CACHE_LIMIT) cache.delete(cache.keys().next().value as string);
-      return clinics;
-    } catch (error) {
-      if (error instanceof Error && error.name === "AbortError") {
-        throw new Error("The clinic search timed out. Check your connection and try again.");
+
+      if (lastError?.message.includes("timed out")) {
+        throw new Error("Clinic searches timed out on the available OpenStreetMap services. Please retry in a moment or try a smaller radius.");
       }
-      if (error instanceof TypeError) {
-        throw new Error("The clinic service is unavailable. Check your connection and try again.");
+      if (lastError?.message.includes("unavailable")) {
+        throw new Error("The available OpenStreetMap clinic services could not be reached. Check your connection and retry.");
       }
-      throw error;
+      throw new Error(lastError?.message ?? "Could not search nearby clinics. Please try again.");
     } finally {
-      globalThis.clearTimeout(timeout);
       inFlight.delete(key);
     }
   })();
