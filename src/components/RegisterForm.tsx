@@ -1,5 +1,5 @@
 import { useState, type FormEvent, type ReactNode } from "react";
-import { ArrowRight, Check, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Sparkles } from "lucide-react";
 import { DEVELOPMENT_MILESTONES } from "../data/milestones";
 import { REGISTRATION_VACCINES } from "../data/uipSchedule";
 import type { ChildRecord, Sex } from "../types";
@@ -8,6 +8,7 @@ import { createChildId, saveChild } from "../utils/childStorage";
 
 interface RegisterFormProps {
   onRegistered: (child: ChildRecord) => void;
+  onBack: () => void;
 }
 
 const EMPTY_FIELDS = {
@@ -22,7 +23,7 @@ const EMPTY_FIELDS = {
   currentDistrict: "",
 };
 
-export default function RegisterForm({ onRegistered }: RegisterFormProps) {
+export default function RegisterForm({ onRegistered, onBack }: RegisterFormProps) {
   const [fields, setFields] = useState(EMPTY_FIELDS);
   const [vaccinesGiven, setVaccinesGiven] = useState<string[]>([]);
   const [milestonesMet, setMilestonesMet] = useState<string[]>([]);
@@ -80,6 +81,7 @@ export default function RegisterForm({ onRegistered }: RegisterFormProps) {
 
   return (
     <form className="auth-form register-form" onSubmit={handleSubmit}>
+      <button className="register-back-link" onClick={onBack} type="button"><ArrowLeft aria-hidden="true" size={14} /> Health worker sign in</button>
       <div className="form-intro register-intro">
         <span className="eyebrow">A RECORD THAT TRAVELS</span>
         <h2>Start a child&apos;s record.</h2>

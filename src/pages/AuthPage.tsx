@@ -63,35 +63,13 @@ export default function AuthPage({ initialTab = "signin", onSignIn, onRegistered
           <span>Kavach</span>
         </div>
         <div className="auth-card">
-          <div aria-label="Account actions" className="tab-list" role="tablist">
-            <button
-              aria-selected={activeTab === "signin"}
-              className={`tab-button${activeTab === "signin" ? " active" : ""}`}
-              id="tab-signin"
-              onClick={() => { setRegisteredChild(null); setActiveTab("signin"); }}
-              role="tab"
-              type="button"
-            >
-              Health worker sign in
-            </button>
-            <button
-              aria-selected={activeTab === "register"}
-              className={`tab-button${activeTab === "register" ? " active" : ""}`}
-              id="tab-register"
-              onClick={() => { setRegisteredChild(null); setActiveTab("register"); }}
-              role="tab"
-              type="button"
-            >
-              Register a child
-            </button>
-          </div>
-          <div aria-labelledby={activeTab === "signin" ? "tab-signin" : "tab-register"} className="tab-panel" role="tabpanel">
+          <div className="auth-content">
             {registeredChild ? (
               <SuccessCard child={registeredChild} onClose={() => setRegisteredChild(null)} onContinue={onContinue} />
             ) : activeTab === "signin" ? (
-              <SignInForm onSignIn={onSignIn} />
+              <SignInForm onRegisterChild={() => setActiveTab("register")} onSignIn={onSignIn} />
             ) : (
-              <RegisterForm onRegistered={handleRegistered} />
+              <RegisterForm onBack={() => setActiveTab("signin")} onRegistered={handleRegistered} />
             )}
           </div>
         </div>
