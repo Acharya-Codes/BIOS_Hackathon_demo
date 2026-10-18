@@ -6,6 +6,7 @@ import DashboardPage from "./pages/DashboardPage";
 import ChildrenPage from "./pages/ChildrenPage";
 import RemindersPage from "./pages/RemindersPage";
 import TransferPage from "./pages/TransferPage";
+import ClinicsPage from "./pages/ClinicsPage";
 import ChildDetailPage from "./components/ChildDetailPage";
 import WorkspaceShell, { type WorkspacePage } from "./components/WorkspaceShell";
 import type { ChildRecord, ReminderRecord } from "./types";
@@ -172,6 +173,8 @@ export default function App() {
             <ChildrenPage children={children} onOpenChild={openChild} onSearch={setSearch} search={search} />
           ) : activePage === "reminders" ? (
             <RemindersPage reminders={reminders} />
+          ) : activePage === "clinics" ? (
+            <ClinicsPage />
           ) : (
             <TransferPage children={children} onOpenChild={openChild} onPullRecord={pullRecord} />
           )}

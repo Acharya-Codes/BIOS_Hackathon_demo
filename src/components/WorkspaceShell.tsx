@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { Bell, Heart, LayoutDashboard, LogOut, MapPinned, Menu, Search, Users, X } from "lucide-react";
+import { Bell, Heart, LayoutDashboard, LocateFixed, LogOut, MapPinned, Menu, Search, Users, X } from "lucide-react";
 import type { ReactNode } from "react";
 
-export type WorkspacePage = "dashboard" | "children" | "reminders" | "transfer";
+export type WorkspacePage = "dashboard" | "children" | "reminders" | "transfer" | "clinics";
 
 interface WorkspaceShellProps {
   activePage: WorkspacePage;
@@ -20,6 +20,7 @@ const NAV_ITEMS: Array<{ id: WorkspacePage; label: string; icon: typeof LayoutDa
   { id: "children", label: "Children", icon: Users },
   { id: "reminders", label: "Reminders", icon: Bell },
   { id: "transfer", label: "Transfer record", icon: MapPinned },
+  { id: "clinics", label: "Find Nearby Clinics", icon: LocateFixed },
 ];
 
 export default function WorkspaceShell({
@@ -91,7 +92,7 @@ export default function WorkspaceShell({
         <nav aria-label="Mobile navigation" className="mobile-bottom-nav">
           {NAV_ITEMS.map(({ id, label, icon: Icon }) => (
             <button aria-current={activePage === id ? "page" : undefined} className={activePage === id ? "mobile-nav-active" : ""} key={id} onClick={() => navigate(id)} type="button">
-              <Icon size={19} aria-hidden="true" /><span>{label === "Transfer record" ? "Transfer" : label}</span>
+              <Icon size={19} aria-hidden="true" /><span>{id === "transfer" ? "Transfer" : id === "clinics" ? "Clinics" : label}</span>
             </button>
           ))}
         </nav>
