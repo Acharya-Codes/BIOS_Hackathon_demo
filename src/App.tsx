@@ -8,6 +8,7 @@ import RemindersPage from "./pages/RemindersPage";
 import TransferPage from "./pages/TransferPage";
 import ClinicsPage from "./pages/ClinicsPage";
 import ChildDetailPage from "./components/ChildDetailPage";
+import RegisterForm from "./components/RegisterForm";
 import WorkspaceShell, { type WorkspacePage } from "./components/WorkspaceShell";
 import type { ChildRecord, ReminderRecord } from "./types";
 import { loadChildRecords, loadReminderRecords } from "./utils/localState";
@@ -27,8 +28,7 @@ export default function App() {
   const [children, setChildren] = useState<ChildRecord[]>([]);
   const [reminders, setReminders] = useState<ReminderRecord[]>([]);
   const [selectedChild, setSelectedChild] = useState<ChildRecord | null>(null);
-  const [registeredChild, setRegisteredChild] = useState<ChildRecord | null>(null);
-  const [startInRegister, setStartInRegister] = useState(false);
+  const [registrationReturnPage, setRegistrationReturnPage] = useState<WorkspacePage>("dashboard");
   const [search, setSearch] = useState("");
   const [reminderTarget, setReminderTarget] = useState<ReminderTarget | null>(null);
   const [sendingReminder, setSendingReminder] = useState(false);
@@ -51,7 +51,6 @@ export default function App() {
       setReminders(loadReminderRecords());
       setStorageError("");
       setAuthenticated(true);
-      setStartInRegister(false);
       setActivePage("dashboard");
     } catch (error) {
       setStorageError(error instanceof Error ? error.message : "Could not load local demo records.");
@@ -135,17 +134,18 @@ export default function App() {
     <>
       {!authenticated ? (
         <AuthPage
-          initialTab={startInRegister ? "register" : "signin"}
           onSignIn={() => enterWorkspace()}
-          onRegistered={(child) => setRegisteredChild(child)}
-          onContinue={() => enterWorkspace(registeredChild ?? undefined)}
         />
       ) : (
         <WorkspaceShell
           activePage={selectedChild ? "dashboard" : activePage}
           onNavigate={(page) => { setSelectedChild(null); setActivePage(page); }}
           onLogout={() => { setAuthenticated(false); setSelectedChild(null); setSearch(""); }}
-          onRegister={() => { setAuthenticated(false); setRegisteredChild(null); setStartInRegister(true); }}
+          onRegister={() => {
+            setRegistrationReturnPage(selectedChild ? "dashboard" : activePage);
+            setSelectedChild(null);
+            setActivePage("register");
+          }}
           onSearch={setSearch}
           reminderCount={reminders.length}
           search={search}
@@ -175,6 +175,27 @@ export default function App() {
             <RemindersPage reminders={reminders} />
           ) : activePage === "clinics" ? (
             <ClinicsPage />
+          ) : activePage === "register" ? (
+            <section className="workspace-register-page">
+              <div className="page-title-row">
+                <div>
+                  <span className="eyebrow">NEW CHILD RECORD</span>
+                  <h1>Register a child</h1>
+                  <p>Add a child&apos;s details to your care circle.</p>
+                </div>
+              </div>
+              <div className="workspace-register-card">
+                <RegisterForm
+                  onBack={() => setActivePage(registrationReturnPage)}
+                  onRegistered={(child) => {
+                    setChildren((current) => [child, ...current.filter((record) => record.id !== child.id)]);
+                    setActivePage("dashboard");
+                    setSelectedChild(child);
+                    showToast(`${child.name}'s record is ready`);
+                  }}
+                />
+              </div>
+            </section>
           ) : (
             <TransferPage children={children} onOpenChild={openChild} onPullRecord={pullRecord} />
           )}

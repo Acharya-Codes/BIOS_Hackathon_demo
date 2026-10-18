@@ -1,31 +1,13 @@
-import { useState } from "react";
 import { motion } from "framer-motion";
-import { ArrowLeft, Heart, ShieldCheck, X } from "lucide-react";
-import { QRCodeSVG } from "qrcode.react";
+import { Heart, ShieldCheck } from "lucide-react";
 import HeroIllustration from "../components/HeroIllustration";
-import RegisterForm from "../components/RegisterForm";
 import SignInForm from "../components/SignInForm";
-import type { ChildRecord } from "../types";
-import { formatAge } from "../utils/dates";
 
 interface AuthPageProps {
-  initialTab?: AuthTab;
   onSignIn: () => void;
-  onRegistered: (child: ChildRecord) => void;
-  onContinue: () => void;
 }
 
-type AuthTab = "signin" | "register";
-
-export default function AuthPage({ initialTab = "signin", onSignIn, onRegistered, onContinue }: AuthPageProps) {
-  const [activeTab, setActiveTab] = useState<AuthTab>(initialTab);
-  const [registeredChild, setRegisteredChild] = useState<ChildRecord | null>(null);
-
-  function handleRegistered(child: ChildRecord) {
-    setRegisteredChild(child);
-    onRegistered(child);
-  }
-
+export default function AuthPage({ onSignIn }: AuthPageProps) {
   return (
     <motion.main
       animate={{ opacity: 1, y: 0 }}
@@ -57,68 +39,18 @@ export default function AuthPage({ initialTab = "signin", onSignIn, onRegistered
         </div>
       </section>
 
-      <section aria-label="Sign in or register" className="auth-panel">
+      <section aria-label="Health worker sign in" className="auth-panel">
         <div className="mobile-brand">
           <span className="brand-mark"><Heart aria-hidden="true" fill="currentColor" size={17} /></span>
           <span>Kavach</span>
         </div>
         <div className="auth-card">
           <div className="auth-content">
-            {registeredChild ? (
-              <SuccessCard child={registeredChild} onClose={() => setRegisteredChild(null)} onContinue={onContinue} />
-            ) : activeTab === "signin" ? (
-              <SignInForm onRegisterChild={() => setActiveTab("register")} onSignIn={onSignIn} />
-            ) : (
-              <RegisterForm onBack={() => setActiveTab("signin")} onRegistered={handleRegistered} />
-            )}
+            <SignInForm onSignIn={onSignIn} />
           </div>
         </div>
         <p className="auth-footer">A kinder way to keep the record moving <span aria-hidden="true">·</span> Kavach demo</p>
       </section>
     </motion.main>
-  );
-}
-
-function SuccessCard({ child, onClose, onContinue }: { child: ChildRecord; onClose: () => void; onContinue: () => void }) {
-  return (
-    <motion.section
-      animate={{ opacity: 1, scale: 1, y: 0 }}
-      aria-live="polite"
-      className="success-card"
-      initial={{ opacity: 0, scale: 0.96, y: 12 }}
-      transition={{ duration: 0.35, ease: "easeOut" }}
-    >
-      <button aria-label="Back to sign in" className="success-back" onClick={onClose} type="button">
-        <ArrowLeft aria-hidden="true" size={17} /> Back
-      </button>
-      <div className="success-symbol"><ShieldCheck aria-hidden="true" size={28} /></div>
-      <span className="eyebrow">RECORD SAVED ON THIS DEVICE</span>
-      <h2>{child.name}&apos;s record is ready.</h2>
-      <p className="success-subtitle">{formatAge(child.dateOfBirth)} · A little record that can travel a long way.</p>
-      <div className="qr-card">
-        <QRCodeSVG
-          aria-label={`QR code for child record ${child.id}`}
-          bgColor="#FFFFFF"
-          fgColor="#1E2761"
-          level="M"
-          size={148}
-          value={`kavach://child/${child.id}`}
-        />
-        <div className="child-id">
-          <span>CHILD ID</span>
-          <strong>{child.id}</strong>
-        </div>
-      </div>
-      <div className="success-details">
-        <span>{child.guardianName}</span>
-        <span>{child.currentVillage}, {child.currentDistrict}</span>
-      </div>
-      <div className="success-next">
-        <span className="success-check"><ShieldCheck size={16} aria-hidden="true" /></span>
-        <p>Your record is saved securely on this device and ready to follow the family.</p>
-      </div>
-      <button className="primary-button success-continue-button" onClick={onContinue} type="button">Open Kavach workspace <ShieldCheck size={16} /></button>
-      <button className="quiet-button" onClick={onClose} type="button"><X aria-hidden="true" size={15} /> Close this record</button>
-    </motion.section>
   );
 }

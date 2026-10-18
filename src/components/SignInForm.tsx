@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { ArrowRight, LockKeyhole, UserRound } from "lucide-react";
 
-export default function SignInForm({ onSignIn, onRegisterChild }: { onSignIn: () => void; onRegisterChild: () => void }) {
+export default function SignInForm({ onSignIn }: { onSignIn: () => void }) {
   const [workerId, setWorkerId] = useState("");
   const [pin, setPin] = useState("");
   const [remember, setRemember] = useState(true);
@@ -36,10 +36,7 @@ export default function SignInForm({ onSignIn, onRegisterChild }: { onSignIn: ()
   return (
     <form className="auth-form" onSubmit={handleSubmit}>
       <div className="form-intro">
-        <div className="form-intro-heading">
-          <span className="eyebrow">WELCOME BACK</span>
-          <button className="register-child-link" onClick={onRegisterChild} type="button">Register a child</button>
-        </div>
+        <span className="eyebrow">WELCOME BACK</span>
         <h2>Your work, carried forward.</h2>
         <p>Sign in to continue caring for children in your community.</p>
       </div>

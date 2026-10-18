@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Bell, Heart, LayoutDashboard, LocateFixed, LogOut, MapPinned, Menu, Search, Users, X } from "lucide-react";
 import type { ReactNode } from "react";
 
-export type WorkspacePage = "dashboard" | "children" | "reminders" | "transfer" | "clinics";
+export type WorkspacePage = "dashboard" | "children" | "reminders" | "transfer" | "clinics" | "register";
 
 interface WorkspaceShellProps {
   activePage: WorkspacePage;
